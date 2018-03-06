@@ -1,63 +1,15 @@
 package net.lanesurface.clock;
 
-import java.util.Calendar;
-
 import java.awt.Dimension;
-import java.awt.Font;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import java.time.LocalDateTime;
+
 public class Clock {
-    /**
-     * The type which a clock hand may take on (second, minute, or hour).
-     * @see Hand
-     */
-    private enum HandType {
-        SECOND(60), 
-        MINUTE(60),
-        HOUR(12);
-
-        public final int divisions;
-
-        private HandType(int divisions) {
-            this.divisions = divisions;
-        }
-    }
-
-    /**
-     * A set of (x, y) integer-based coordinates.
-     */
-    private static final class CoordinatePair {
-        public int x, y;
-
-        public CoordinatePair(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
-    
-    /**
-     * One of the hand of the clock. Stores state which describes its type,
-     * its color when rendered on-screen, and the coordinates that the hand 
-     * point to.
-     */
-    private static final class Hand {
-        public final HandType type;
-        public final java.awt.Color color;
-        private CoordinatePair coordinates;
-        
-        public Hand(HandType type, java.awt.Color color) {
-            this.type = type;
-            this.color = color;
-        }
-        
-        public void setCoordinates(CoordinatePair coordinates) {
-            this.coordinates = coordinates;
-        }
-    }
-    
     /**
      * An array that hold the current time displayed on the clock, where the
      * the elements are in the order of hour, minute, and second.
@@ -69,14 +21,6 @@ public class Clock {
         new Hand(HandType.MINUTE, java.awt.Color.BLUE),
         new Hand(HandType.SECOND, java.awt.Color.RED)
     };
-        
-    static {
-        for (int i = 0; i < hands.length; i++) {
-            Hand hand = hands[i];
-            CoordinatePair coords = getHandCoordinates(hand.type, time[i]);
-            hand.setCoordinates(coords);
-        }
-    }
 
     private static java.awt.Image face;
     
@@ -93,7 +37,6 @@ public class Clock {
                              CANVAS_HEIGHT = 250;
 
     public static void main(String[] args) throws java.io.IOException {
-        
         face = ImageIO.read(ClassLoader.getSystemResource("watch-face.png"));
         
         JFrame frame = new JFrame("Analog Clock");
@@ -104,17 +47,10 @@ public class Clock {
         frame.pack();
 
         @SuppressWarnings("serial")
-        javax.swing.JPanel panel = new javax.swing.JPanel() {
-            private java.awt.Font font = new Font("Times New Roman",
-                                                  Font.BOLD,
-                                                  18);
-            
+        JPanel panel = new JPanel() {
             @Override
             public void paint(java.awt.Graphics graphics) {
                 graphics.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-                graphics.setFont(font);
-                
-                // Draw the background of the clock.
                 graphics.drawImage(face, -CLK_RAD, -CLK_RAD,
                                    2 * CLK_RAD, 2 * CLK_RAD, this);
                 
@@ -133,16 +69,16 @@ public class Clock {
         frame.setVisible(true);
         
         new Timer(1000, (ae) -> {
-            java.util.Date date = Calendar.getInstance().getTime();
+            LocalDateTime now = LocalDateTime.now();
             
-            time[0] = date.getHours() % 12;
-            time[1] = date.getMinutes();
-            time[2] = date.getSeconds();
+            time[0] = now.getHour() % 12;
+            time[1] = now.getMinute();
+            time[2] = now.getSecond();
             
             for (int i = 0; i < hands.length; i++) {
                 Hand hand = hands[i];
                 CoordinatePair coords = getHandCoordinates(hand.type, time[i]);
-                hand.setCoordinates(coords);
+                hand.coordinates = coords;
             }
             panel.repaint();
         }).start();
